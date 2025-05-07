@@ -1,0 +1,18 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knowledge Learning</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Bienvenue sur Knowledge Learning</h2>
+        {% if user.is_authenticated %}
+            <p>Bonjour, {{ user.username }} ! <a href="{% url 'logout' %}">Déconnexion</a></p>
+        {% else %}
+            <p><a href="{% url 'register' %}">S'inscrire</a> | <a href="{% url 'login' %}">Se connecter</a></p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+Bonjour {{ user.username }},
+
+Merci de vous être inscrit sur Knowledge Learning ! Veuillez cliquer sur le lien ci-dessous pour activer votre compte :
+
+http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+Si le lien ne fonctionne pas, copiez-le dans votre navigateur.
+
+À bientôt,
+L'équipe Knowledge Learning

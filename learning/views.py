@@ -1,4 +1,3 @@
-# learning/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.sites.shortcuts import get_current_site
@@ -15,7 +14,6 @@ def register(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Envoyer un email d'activation
             current_site = get_current_site(request)
             mail_subject = 'Activer votre compte Knowledge Learning'
             message = render_to_string('registration/activation_email.html', {

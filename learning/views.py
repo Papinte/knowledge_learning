@@ -48,3 +48,111 @@ def activate(request, uidb64, token):
 def user_logout(request):
     logout(request)
     return redirect('home')
+
+# Vues pour Stripe
+import stripe
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Cursus, Lesson, Purchase
+
+# Configurer Stripe avec la clé secrète
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# learning/views.py
+@login_required
+def buy_cursus(request, cursus_id):
+    cursus = get_object_or_404(Cursus, id=cursus_id)
+    if not request.user.is_active:
+        messages.error(request, "Vous devez activer votre compte pour effectuer un achat.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        try:
+            print("Création de la session Stripe...")
+            print(f"Clé secrète Stripe : {settings.STRIPE_SECRET_KEY}")  # Vérifie que la clé est bien lue
+            print(f"Prix du cursus : {cursus.price}, après conversion : {int(cursus.price * 100)}")
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'eur',
+                        'product_data': {
+                            'name': cursus.name,
+                        },
+                        'unit_amount': int(cursus.price * 100),  # Montant en centimes
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=request.build_absolute_uri('/success/'),
+                cancel_url=request.build_absolute_uri('/cancel/'),
+            )
+            print(f"Session Stripe créée : {session.url}")
+            Purchase.objects.create(
+                utilisateur=request.user,
+                cursus=cursus,
+                amount=cursus.price,
+                created_by=request.user.username,
+                updated_by=request.user.username
+            )
+            return redirect(session.url, code=303)
+        except Exception as e:
+            print(f"Erreur lors de la création de la session Stripe : {str(e)}")  # Ajoute ce log
+            messages.error(request, f"Erreur lors du paiement : {str(e)}")
+            return redirect('home')
+
+    return render(request, 'buy_cursus.html', {'cursus': cursus})
+
+@login_required
+def buy_lesson(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    if not request.user.is_active:
+        messages.error(request, "Vous devez activer votre compte pour effectuer un achat.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        try:
+            print("Création de la session Stripe...")
+            print(f"Clé secrète Stripe : {settings.STRIPE_SECRET_KEY}")
+            print(f"Prix de la leçon : {lesson.price}, après conversion : {int(lesson.price * 100)}")
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'eur',
+                        'product_data': {
+                            'name': lesson.title,
+                        },
+                        'unit_amount': int(lesson.price * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=request.build_absolute_uri('/success/'),
+                cancel_url=request.build_absolute_uri('/cancel/'),
+            )
+            print(f"Session Stripe créée : {session.url}")
+            Purchase.objects.create(
+                utilisateur=request.user,
+                lesson=lesson,
+                amount=lesson.price,
+                created_by=request.user.username,
+                updated_by=request.user.username
+            )
+            return redirect(session.url, code=303)
+        except Exception as e:
+            print(f"Erreur lors de la création de la session Stripe : {str(e)}")
+            messages.error(request, f"Erreur lors du paiement : {str(e)}")
+            return redirect('home')
+
+    return render(request, 'buy_lesson.html', {'lesson': lesson})
+
+def payment_success(request):
+    messages.success(request, "Paiement réussi ! Vous avez maintenant accès à votre contenu.")
+    return redirect('home')
+
+def payment_cancel(request):
+    messages.error(request, "Paiement annulé.")
+    return redirect('home')

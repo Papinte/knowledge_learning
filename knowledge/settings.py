@@ -11,6 +11,18 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+# Initialiser django-environ
+env = environ.Env(
+    DEBUG=(bool, True),
+)
+# Spécifie explicitement le chemin du fichier .env
+env.read_env(Path(__file__).resolve().parent.parent / '.env')
+
+
+print(f"STRIPE_PUBLIC_KEY from env: {env('STRIPE_PUBLIC_KEY', default='')}")
+print(f"STRIPE_SECRET_KEY from env: {env('STRIPE_SECRET_KEY', default='')}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,10 +31,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9093)j)e#6)qluqytawxmo6&ggix9b01xfr*i-x+a3a(8$7la-'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-9093)j)e#6)qluqytawxmo6&ggix9b01xfr*i-x+a3a(8$7la-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -133,3 +145,7 @@ AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 
 # Redirection après connexion (pour éviter l'erreur 404 sur /accounts/profile/)
 LOGIN_REDIRECT_URL = 'home'
+
+# Clés Stripe (elles seront lues depuis le fichier .env)
+STRIPE_PUBLIC_KEY = env('STRIPE_PUBLIC_KEY', default='')
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')

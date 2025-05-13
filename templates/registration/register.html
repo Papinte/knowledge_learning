@@ -1,17 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Inscription</title>
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Inscription</h2>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">S'inscrire</button>
-        </form>
-    </div>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Inscription - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Inscription</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">S'inscrire</button>
+    </form>
+    <p>Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a></p>
+{% endblock %}

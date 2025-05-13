@@ -1,19 +1,12 @@
-<!-- templates/buy_cursus.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Acheter un cursus</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://js.stripe.com/v3/"></script>
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Acheter le cursus : {{ cursus.name }}</h2>
-        <p>Prix : {{ cursus.price }} €</p>
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Payer avec Stripe</button>
-        </form>
-    </div>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Acheter un cursus - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Acheter le cursus : {{ cursus.name }}</h2>
+    <p>Prix : {{ adjusted_price }} €</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Payer avec Stripe</button>
+    </form>
+{% endblock %}

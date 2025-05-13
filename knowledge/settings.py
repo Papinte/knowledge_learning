@@ -13,16 +13,14 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import environ
 
-# Initialiser django-environ
+
 env = environ.Env(
     DEBUG=(bool, True),
 )
-# Spécifie explicitement le chemin du fichier .env
+
 env.read_env(Path(__file__).resolve().parent.parent / '.env')
 
 
-print(f"STRIPE_PUBLIC_KEY from env: {env('STRIPE_PUBLIC_KEY', default='')}")
-print(f"STRIPE_SECRET_KEY from env: {env('STRIPE_SECRET_KEY', default='')}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,6 +75,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
 ]
 
 WSGI_APPLICATION = 'knowledge.wsgi.application'

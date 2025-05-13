@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Valider une leçon - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Valider la leçon : {{ lesson.title }}</h2>
+    <p>Êtes-vous sûr de vouloir valider cette leçon ?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Valider</button>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+{% endblock %}

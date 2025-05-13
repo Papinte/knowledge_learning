@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Bienvenue sur Knowledge Learning</h2>
+    {% if user.is_authenticated %}
+        <p>Bonjour, {{ user.username }} !</p>
+        <p><a href="{% url 'list_certifications' %}" class="btn btn-info">Voir mes certifications</a></p>
+        <p><a href="{% url 'list_cursuses' %}" class="btn btn-primary">Voir les cursus disponibles</a></p>
+    {% else %}
+        <p><a href="{% url 'register' %}">S'inscrire</a> | <a href="{% url 'login' %}">Se connecter</a></p>
+    {% endif %}
+{% endblock %}

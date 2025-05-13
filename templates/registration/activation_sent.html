@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Activation envoyée - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Activation envoyée</h2>
+    <p>Un email d'activation a été envoyé à votre adresse. Veuillez vérifier votre boîte de réception (et vos spams) pour activer votre compte.</p>
+    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Retour à l'accueil</a>
+{% endblock %}

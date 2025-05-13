@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Connexion - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Connexion</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+    <p>Pas encore inscrit ? <a href="{% url 'register' %}">S'inscrire</a></p>
+{% endblock %}

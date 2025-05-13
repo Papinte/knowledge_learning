@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Leçon : {{ lesson.title }} - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Leçon : {{ lesson.title }}</h2>
+    <h3>Cursus : {{ lesson.cursus.name }}</h3>
+    <p>Contenu de la leçon :</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <div>
+        <h4>Vidéo :</h4>
+        <p><a href="{{ lesson.video_url }}" target="_blank">{{ lesson.video_url }}</a></p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="mark_completed" value="true">
+        <button type="submit" class="btn btn-primary" {% if is_completed %}disabled{% endif %}>
+            {% if is_completed %}Leçon déjà terminée{% else %}Marquer comme terminé{% endif %}
+        </button>
+    </form>
+    {% if is_completed %}
+        <a href="{% url 'validate_lesson' lesson.id %}" class="btn btn-success mt-3">Valider la leçon</a>
+    {% endif %}
+    <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+{% endblock %}

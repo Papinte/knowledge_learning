@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Acheter une leçon - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Acheter la leçon : {{ lesson.title }}</h2>
+    <p>Prix : {{ lesson.price }} €</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Payer avec Stripe</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes certifications - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Mes certifications</h2>
+    {% if certifications %}
+        <ul class="list-group">
+            {% for certification in certifications %}
+                <li class="list-group-item">
+                    Certification pour le thème : {{ certification.theme.name }} (obtenue le {{ certification.certified_at|date:"d/m/Y" }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Vous n'avez encore obtenu aucune certification.</p>
+    {% endif %}
+    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Retour à l'accueil</a>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}Activation invalide - Knowledge Learning{% endblock %}
+
+{% block content %}
+    <h2>Activation invalide</h2>
+    <p>Le lien d'activation est invalide ou a expiré. Veuillez vous inscrire à nouveau.</p>
+    <a href="{% url 'register' %}" class="btn btn-primary mt-3">S'inscrire</a>
+    <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+{% endblock %}

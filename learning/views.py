@@ -1,3 +1,9 @@
+"""Views for the Knowledge Learning application.
+
+This module contains the views for handling user registration, authentication,
+purchases, lesson validation, and certifications.
+"""
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.sites.shortcuts import get_current_site
@@ -14,8 +20,18 @@ from .forms import RegistrationForm
 from .models import Utilisateur, Cursus, Lesson, Purchase, Validation, Certification
 
 
-# User registration view
 def register(request):
+    """Handle user registration and send activation email.
+
+    Displays a registration form and, upon successful submission, creates a new user
+    and sends an activation email to the user.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered registration form or activation sent page.
+    """
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -37,8 +53,19 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 
-# Account activation view
 def activate(request, uidb64, token):
+    """Activate user account via email link.
+
+    Verifies the activation token and activates the user account if valid.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        uidb64 (str): Base64-encoded user ID.
+        token (str): Activation token.
+
+    Returns:
+        HttpResponse: Redirect to home or invalid activation page.
+    """
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = Utilisateur.objects.get(pk=uid)
@@ -53,8 +80,15 @@ def activate(request, uidb64, token):
     return render(request, 'registration/activation_invalid.html')
 
 
-# User logout view
 def user_logout(request):
+    """Log out the user and redirect to home.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page.
+    """
     logout(request)
     return redirect('home')
 
@@ -63,9 +97,19 @@ def user_logout(request):
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-# Purchase a cursus
 @login_required
 def buy_cursus(request, cursus_id):
+    """Handle the purchase of a cursus via Stripe.
+
+    Allows a user to purchase a cursus, redirecting to Stripe for payment.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        cursus_id (int): The ID of the cursus to purchase.
+
+    Returns:
+        HttpResponse: Redirect to Stripe or render the purchase page.
+    """
     cursus = get_object_or_404(Cursus, id=cursus_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to purchase.")
@@ -115,9 +159,19 @@ def buy_cursus(request, cursus_id):
     return render(request, 'buy_cursus.html', {'cursus': cursus, 'adjusted_price': adjusted_price})
 
 
-# Purchase a lesson
 @login_required
 def buy_lesson(request, lesson_id):
+    """Handle the purchase of a lesson via Stripe.
+
+    Allows a user to purchase a lesson, redirecting to Stripe for payment.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to purchase.
+
+    Returns:
+        HttpResponse: Redirect to Stripe or render the purchase page.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to purchase.")
@@ -159,8 +213,17 @@ def buy_lesson(request, lesson_id):
     return render(request, 'buy_lesson.html', {'lesson': lesson})
 
 
-# Handle successful payment
 def payment_success(request):
+    """Handle successful payment after Stripe redirection.
+
+    Processes a successful payment and creates a purchase record.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page with a success message.
+    """
     session_id = request.session.get('stripe_session_id')
     pending_purchase = request.session.get('pending_purchase')
 
@@ -220,15 +283,32 @@ def payment_success(request):
     return redirect('home')
 
 
-# Handle payment cancellation
 def payment_cancel(request):
+    """Handle payment cancellation after Stripe redirection.
+
+    Displays a cancellation message and redirects to home.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page with a cancellation message.
+    """
     messages.error(request, "Payment cancelled. No purchase recorded.")
     return redirect('home')
 
 
-# View a lesson
 @login_required
 def view_lesson(request, lesson_id):
+    """Display a lesson and allow marking it as completed.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to view.
+
+    Returns:
+        HttpResponse: Rendered lesson page or redirect after marking as completed.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to access a lesson.")
@@ -267,9 +347,17 @@ def view_lesson(request, lesson_id):
     return render(request, 'view_lesson.html', {'lesson': lesson, 'is_completed': is_completed})
 
 
-# Validate a lesson
 @login_required
 def validate_lesson(request, lesson_id):
+    """Validate a lesson and check for theme certification.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to validate.
+
+    Returns:
+        HttpResponse: Redirect to home or render validation page.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to validate a lesson.")
@@ -332,9 +420,16 @@ def validate_lesson(request, lesson_id):
     return render(request, 'validate_lesson.html', {'lesson': lesson})
 
 
-# List user certifications
 @login_required
 def list_certifications(request):
+    """List certifications earned by the user.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered certifications page.
+    """
     if not request.user.is_active:
         messages.error(request, "Account must be activated to view certifications.")
         return redirect('home')
@@ -343,8 +438,15 @@ def list_certifications(request):
     return render(request, 'list_certifications.html', {'certifications': certifications})
 
 
-# List available cursus
 def list_cursuses(request):
+    """List all available cursus for browsing and purchase.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered cursus list page.
+    """
     cursuses = Cursus.objects.all()
     cursuses_data = []
     for cursus in cursuses:

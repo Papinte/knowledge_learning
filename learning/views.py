@@ -1,3 +1,9 @@
+"""Views for the Knowledge Learning application.
+
+This module contains the views for handling user registration, authentication,
+purchases, lesson validation, and certifications.
+"""
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.sites.shortcuts import get_current_site
@@ -11,11 +17,21 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 import stripe
 from .forms import RegistrationForm
-from .models import Utilisateur, Cursus, Lesson, Purchase, Validation, Certification
+from .models import Utilisateur, Cursus, Lesson, Purchase, Validation, Certification, Theme
 
 
-# User registration view
 def register(request):
+    """Handle user registration and send activation email.
+
+    Displays a registration form and, upon successful submission, creates a new user
+    and sends an activation email to the user.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered registration form or activation sent page.
+    """
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -37,8 +53,19 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 
-# Account activation view
 def activate(request, uidb64, token):
+    """Activate user account via email link.
+
+    Verifies the activation token and activates the user account if valid.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        uidb64 (str): Base64-encoded user ID.
+        token (str): Activation token.
+
+    Returns:
+        HttpResponse: Redirect to home or invalid activation page.
+    """
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = Utilisateur.objects.get(pk=uid)
@@ -53,8 +80,15 @@ def activate(request, uidb64, token):
     return render(request, 'registration/activation_invalid.html')
 
 
-# User logout view
 def user_logout(request):
+    """Log out the user and redirect to home.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page.
+    """
     logout(request)
     return redirect('home')
 
@@ -63,9 +97,19 @@ def user_logout(request):
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-# Purchase a cursus
 @login_required
 def buy_cursus(request, cursus_id):
+    """Handle the purchase of a cursus via Stripe.
+
+    Allows a user to purchase a cursus, redirecting to Stripe for payment.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        cursus_id (int): The ID of the cursus to purchase.
+
+    Returns:
+        HttpResponse: Redirect to Stripe or render the purchase page.
+    """
     cursus = get_object_or_404(Cursus, id=cursus_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to purchase.")
@@ -115,9 +159,19 @@ def buy_cursus(request, cursus_id):
     return render(request, 'buy_cursus.html', {'cursus': cursus, 'adjusted_price': adjusted_price})
 
 
-# Purchase a lesson
 @login_required
 def buy_lesson(request, lesson_id):
+    """Handle the purchase of a lesson via Stripe.
+
+    Allows a user to purchase a lesson, redirecting to Stripe for payment.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to purchase.
+
+    Returns:
+        HttpResponse: Redirect to Stripe or render the purchase page.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to purchase.")
@@ -159,19 +213,28 @@ def buy_lesson(request, lesson_id):
     return render(request, 'buy_lesson.html', {'lesson': lesson})
 
 
-# Handle successful payment
 def payment_success(request):
+    """Handle successful payment after Stripe redirection.
+
+    Processes a successful payment and creates a purchase record.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page with a success message.
+    """
     session_id = request.session.get('stripe_session_id')
     pending_purchase = request.session.get('pending_purchase')
 
     if not session_id or not pending_purchase:
-        messages.error(request, "No payment session or pending purchase found.")
+        messages.error(request, "Aucune session de paiement ou achat en attente trouvé.")
         return redirect('home')
 
     try:
         session = stripe.checkout.Session.retrieve(session_id)
         if session.payment_status != 'paid':
-            messages.error(request, "Payment not finalized.")
+            messages.error(request, "Le paiement n'a pas été finalisé.")
             return redirect('home')
 
         if pending_purchase['type'] == 'lesson':
@@ -184,9 +247,9 @@ def payment_success(request):
                     created_by=request.user.username,
                     updated_by=request.user.username
                 )
-                messages.success(request, f"Payment successful! You now have access to lesson {lesson.title}.")
+                messages.success(request, f"Paiement réussi ! Vous avez maintenant accès à la leçon {lesson.title}.")
             else:
-                messages.info(request, "Lesson already purchased.")
+                messages.info(request, "Leçon déjà achetée.")
         elif pending_purchase['type'] == 'cursus':
             cursus = get_object_or_404(Cursus, id=pending_purchase['id'])
             if not Purchase.objects.filter(utilisateur=request.user, cursus=cursus).exists():
@@ -204,15 +267,15 @@ def payment_success(request):
                     created_by=request.user.username,
                     updated_by=request.user.username
                 )
-                messages.success(request, f"Payment successful! You now have access to cursus {cursus.name}.")
+                messages.success(request, f"Paiement réussi ! Vous avez maintenant accès au cursus {cursus.name}.")
             else:
-                messages.info(request, "Cursus already purchased.")
+                messages.info(request, "Cursus déjà acheté.")
         else:
-            messages.error(request, "Invalid purchase type.")
+            messages.error(request, "Type d'achat invalide.")
             return redirect('home')
 
     except stripe.error.StripeError as e:
-        messages.error(request, f"Payment verification error: {str(e)}")
+        messages.error(request, f"Erreur de vérification du paiement : {str(e)}")
         return redirect('home')
 
     request.session.pop('stripe_session_id', None)
@@ -220,15 +283,32 @@ def payment_success(request):
     return redirect('home')
 
 
-# Handle payment cancellation
 def payment_cancel(request):
-    messages.error(request, "Payment cancelled. No purchase recorded.")
+    """Handle payment cancellation after Stripe redirection.
+
+    Displays a cancellation message and redirects to home.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Redirect to the home page with a cancellation message.
+    """
+    messages.error(request, "Paiement annulé. Aucun achat enregistré.")
     return redirect('home')
 
 
-# View a lesson
 @login_required
 def view_lesson(request, lesson_id):
+    """Display a lesson and allow marking it as completed.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to view.
+
+    Returns:
+        HttpResponse: Rendered lesson page or redirect after marking as completed.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to access a lesson.")
@@ -267,9 +347,17 @@ def view_lesson(request, lesson_id):
     return render(request, 'view_lesson.html', {'lesson': lesson, 'is_completed': is_completed})
 
 
-# Validate a lesson
 @login_required
 def validate_lesson(request, lesson_id):
+    """Validate a lesson and check for theme certification.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        lesson_id (int): The ID of the lesson to validate.
+
+    Returns:
+        HttpResponse: Redirect to home or render validation page.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     if not request.user.is_active:
         messages.error(request, "Account must be activated to validate a lesson.")
@@ -332,9 +420,16 @@ def validate_lesson(request, lesson_id):
     return render(request, 'validate_lesson.html', {'lesson': lesson})
 
 
-# List user certifications
 @login_required
 def list_certifications(request):
+    """List certifications earned by the user.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered certifications page.
+    """
     if not request.user.is_active:
         messages.error(request, "Account must be activated to view certifications.")
         return redirect('home')
@@ -343,37 +438,64 @@ def list_certifications(request):
     return render(request, 'list_certifications.html', {'certifications': certifications})
 
 
-# List available cursus
 def list_cursuses(request):
-    cursuses = Cursus.objects.all()
-    cursuses_data = []
-    for cursus in cursuses:
-        lessons = Lesson.objects.filter(cursus=cursus)
-        purchased_lessons = Purchase.objects.filter(
-            utilisateur=request.user if request.user.is_authenticated else None,
-            lesson__in=lessons
-        ).values_list('lesson', flat=True)
-        has_purchased_cursus = Purchase.objects.filter(
-            utilisateur=request.user if request.user.is_authenticated else None,
-            cursus=cursus
-        ).exists()
-        if has_purchased_cursus:
-            adjusted_price = 0
-        else:
-            remaining_lessons = lessons.exclude(id__in=purchased_lessons)
-            if remaining_lessons.exists():
-                adjusted_price = sum(lesson.price for lesson in remaining_lessons)
-            else:
-                adjusted_price = 0
-                has_purchased_cursus = True
-            if not purchased_lessons:
-                adjusted_price = cursus.price
+    """List all available cursus for browsing and purchase.
 
-        cursuses_data.append({
-            'cursus': cursus,
-            'adjusted_price': adjusted_price,
-            'has_purchased_cursus': has_purchased_cursus,
-            'purchased_lessons': purchased_lessons,
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: Rendered cursus list page.
+    """
+    themes = Theme.objects.all()
+    themes_data = []
+
+    for theme in themes:
+        cursuses = Cursus.objects.filter(theme=theme)
+        cursuses_data = []
+
+        for cursus in cursuses:
+            lessons = Lesson.objects.filter(cursus=cursus)
+            purchased_lessons = Purchase.objects.filter(
+                utilisateur=request.user if request.user.is_authenticated else None,
+                lesson__in=lessons
+            ).values_list('lesson', flat=True)
+            has_purchased_cursus = Purchase.objects.filter(
+                utilisateur=request.user if request.user.is_authenticated else None,
+                cursus=cursus
+            ).exists()
+            if has_purchased_cursus:
+                adjusted_price = 0
+            else:
+                remaining_lessons = lessons.exclude(id__in=purchased_lessons)
+                if remaining_lessons.exists():
+                    adjusted_price = sum(lesson.price for lesson in remaining_lessons)
+                else:
+                    adjusted_price = 0
+                    has_purchased_cursus = True
+                if not purchased_lessons:
+                    adjusted_price = cursus.price
+
+            lessons_data = []
+            for idx, lesson in enumerate(lessons, start=1):
+                lessons_data.append({
+                    'id': lesson.id,
+                    'title': lesson.title,
+                    'price': lesson.price,
+                    'is_purchased': lesson.id in purchased_lessons,
+                    'index': idx
+                })
+
+            cursuses_data.append({
+                'cursus': cursus,
+                'adjusted_price': adjusted_price,
+                'has_purchased_cursus': has_purchased_cursus,
+                'lessons': lessons_data,
+            })
+
+        themes_data.append({
+            'theme': theme,
+            'cursuses': cursuses_data,
         })
 
-    return render(request, 'list_cursuses.html', {'cursuses_data': cursuses_data})
+    return render(request, 'list_cursuses.html', {'themes_data': themes_data})

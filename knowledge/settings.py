@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'learning',
+    'django_extensions',
 ]
 
 # Middleware

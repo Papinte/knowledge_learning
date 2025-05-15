@@ -160,25 +160,3 @@ Exécutez les tests unitaires pour vérifier les fonctionnalités :
 python manage.py test
 
 Les tests couvrent l’inscription, l’activation par email, la connexion/déconnexion, les achats, la validation des leçons et les composants d’accès aux données.
-
-Déploiement
-
-L’application peut être déployée sur Render :
-
-
-
-
-
-Créez un Web Service sur Render et liez ce dépôt GitHub.
-
-
-
-Définissez les variables d’environnement (voir .env.example).
-
-
-
-Ajoutez une base de données PostgreSQL et mettez à jour settings.py avec les informations de connexion.
-
-
-
-Déployez et accédez à l’URL publique.

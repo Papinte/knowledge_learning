@@ -1,11 +1,12 @@
-# docs/source/conf.py
+# docs/conf.py
 
 # Configuration file for the Sphinx documentation builder.
 
 # Add the project root to the Python path
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))  # Chemin vers la racine de ton projet (knowledge_learning)
+
+sys.path.insert(0, r"C:\Users\Antoi\Desktop\knowledge_learning")
 
 # Django settings module
 os.environ['DJANGO_SETTINGS_MODULE'] = 'knowledge.settings'
@@ -24,7 +25,7 @@ release = '1.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',  # Supporte le style Google/Numpy pour les docstrings
+    'sphinx.ext.napoleon',
 ]
 
 # Theme

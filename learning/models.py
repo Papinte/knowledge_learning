@@ -9,15 +9,6 @@ class Utilisateur(AbstractUser):
 
     This model extends Django's AbstractUser to include additional fields
     for user roles, account activation, and audit tracking.
-
-    Attributes:
-        email (str): User's email address (unique).
-        role (str): Role of the user ('client' or 'admin').
-        is_active (bool): Whether the account is activated.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=[('client', 'Client'), ('admin', 'Admin')], default='client')
@@ -58,13 +49,6 @@ class Theme(models.Model):
     """Theme model for grouping cursus.
 
     Represents a category or theme (e.g., Music, IT) that groups related cursus.
-
-    Attributes:
-        name (str): Name of the theme.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,15 +76,6 @@ class Cursus(models.Model):
     """Cursus model within a theme.
 
     Represents a cursus (e.g., Guitar Initiation) that belongs to a theme.
-
-    Attributes:
-        theme (Theme): The associated theme.
-        name (str): Name of the cursus.
-        price (decimal): Price of the cursus.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
@@ -130,17 +105,6 @@ class Lesson(models.Model):
     """Lesson model within a cursus.
 
     Represents an individual lesson that belongs to a cursus.
-
-    Attributes:
-        cursus (Cursus): The associated cursus.
-        title (str): Title of the lesson.
-        content (str): Content of the lesson.
-        video_url (str): URL of the lesson video.
-        price (decimal): Price of the lesson.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     cursus = models.ForeignKey(Cursus, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
@@ -172,17 +136,6 @@ class Purchase(models.Model):
     """Purchase model for user transactions.
 
     Represents a purchase of a cursus or lesson by a user.
-
-    Attributes:
-        utilisateur (Utilisateur): The user making the purchase.
-        cursus (Cursus): The purchased cursus (optional).
-        lesson (Lesson): The purchased lesson (optional).
-        amount (decimal): Amount of the purchase.
-        purchase_date (datetime): Date of the purchase.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     cursus = models.ForeignKey(Cursus, on_delete=models.SET_NULL, null=True, blank=True)
@@ -216,15 +169,6 @@ class Validation(models.Model):
     """Validation model for tracking lesson completions.
 
     Tracks when a user validates a lesson after marking it as completed.
-
-    Attributes:
-        utilisateur (Utilisateur): The user validating the lesson.
-        lesson (Lesson): The validated lesson.
-        validated_at (datetime): Date of validation.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
@@ -254,15 +198,6 @@ class Certification(models.Model):
     """Certification model for theme completion.
 
     Tracks certifications earned by users for completing all lessons in a theme.
-
-    Attributes:
-        utilisateur (Utilisateur): The user earning the certification.
-        theme (Theme): The theme for which the certification is earned.
-        certified_at (datetime): Date of certification.
-        created_at (datetime): Creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        created_by (str): Username of the creator.
-        updated_by (str): Username of the last updater.
     """
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE)

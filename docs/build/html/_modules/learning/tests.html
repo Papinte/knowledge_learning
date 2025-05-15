@@ -1,0 +1,558 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>learning.tests &mdash; Knowledge Learning 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Knowledge Learning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Knowledge Learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">learning.tests</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for learning.tests</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Unit tests for the Knowledge Learning application.</span>
+
+<span class="sd">This module contains unit tests for user authentication, purchases,</span>
+<span class="sd">lesson validation, and data access components.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.test</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsafe_base64_encode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.encoding</span><span class="w"> </span><span class="kn">import</span> <span class="n">force_bytes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.tokens</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_token_generator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Utilisateur</span><span class="p">,</span> <span class="n">Theme</span><span class="p">,</span> <span class="n">Cursus</span><span class="p">,</span> <span class="n">Lesson</span><span class="p">,</span> <span class="n">Purchase</span><span class="p">,</span> <span class="n">Validation</span><span class="p">,</span> <span class="n">Certification</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.forms</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegistrationForm</span>
+
+<div class="viewcode-block" id="AuthenticationTests">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuthenticationTests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tests for user authentication functionality.</span>
+
+<span class="sd">    This class tests user registration, email activation, login, and logout.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AuthenticationTests.setUp">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests.setUp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up test data for authentication tests.</span>
+
+<span class="sd">        Creates a test user with an active account for use in tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s1">&#39;testuser@example.com&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationTests.test_user_registration">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests.test_user_registration">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_user_registration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test user registration and email activation requirement.</span>
+
+<span class="sd">        Verifies that a new user can register and that the account is inactive</span>
+<span class="sd">        until email activation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;register&#39;</span><span class="p">),</span> <span class="p">{</span>
+            <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;newuser&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="s1">&#39;newuser@example.com&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;password1&#39;</span><span class="p">:</span> <span class="s1">&#39;NewPassword123!&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;password2&#39;</span><span class="p">:</span> <span class="s1">&#39;NewPassword123!&#39;</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;newuser&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">())</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;newuser&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationTests.test_user_email_activation">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests.test_user_email_activation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_user_email_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test user account activation via email link.</span>
+
+<span class="sd">        Verifies that a user can activate their account using a valid email link.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">inactive_user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;inactiveuser&#39;</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s1">&#39;inactiveuser@example.com&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">)</span>
+        <span class="n">inactive_user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">inactive_user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">uid</span> <span class="o">=</span> <span class="n">urlsafe_base64_encode</span><span class="p">(</span><span class="n">force_bytes</span><span class="p">(</span><span class="n">inactive_user</span><span class="o">.</span><span class="n">pk</span><span class="p">))</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">default_token_generator</span><span class="o">.</span><span class="n">make_token</span><span class="p">(</span><span class="n">inactive_user</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;activate&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">uid</span><span class="p">,</span> <span class="n">token</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="n">inactive_user</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">inactive_user</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationTests.test_login">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests.test_login">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test user login with valid credentials.</span>
+
+<span class="sd">        Verifies that a user can log in and is authenticated after login.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">),</span> <span class="p">{</span>
+            <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;testuser&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">wsgi_request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationTests.test_logout">
+<a class="viewcode-back" href="../../learning.html#learning.tests.AuthenticationTests.test_logout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test user logout functionality.</span>
+
+<span class="sd">        Verifies that a logged-in user can log out and is no longer authenticated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;logout&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">wsgi_request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="PurchaseTests">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PurchaseTests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tests for purchase functionality with Stripe.</span>
+
+<span class="sd">    This class tests purchasing lessons and cursus, including unauthorized access.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="PurchaseTests.setUp">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests.setUp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up test data for purchase tests.</span>
+
+<span class="sd">        Creates a test user, theme, cursus, and lesson for purchase-related tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s1">&#39;testuser@example.com&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme</span> <span class="o">=</span> <span class="n">Theme</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Musique&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursus</span> <span class="o">=</span> <span class="n">Cursus</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Initiation à la guitare&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">50.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Découverte de l’instrument&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu de la leçon&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com/video&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PurchaseTests.test_buy_lesson">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests.test_buy_lesson">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_buy_lesson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test lesson purchase with Stripe redirection.</span>
+
+<span class="sd">        Verifies that a logged-in user can initiate a lesson purchase and is redirected to Stripe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;buy_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">Purchase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exists</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PurchaseTests.test_buy_cursus">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests.test_buy_cursus">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_buy_cursus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test cursus purchase with Stripe redirection.</span>
+
+<span class="sd">        Verifies that a logged-in user can initiate a cursus purchase and is redirected to Stripe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;buy_cursus&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">Purchase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exists</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PurchaseTests.test_buy_lesson_unauthorized">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests.test_buy_lesson_unauthorized">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_buy_lesson_unauthorized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test lesson purchase attempt by an unauthorized user.</span>
+
+<span class="sd">        Verifies that an unauthenticated user is redirected to the login page.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;buy_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PurchaseTests.test_buy_lesson_inactive_user">
+<a class="viewcode-back" href="../../learning.html#learning.tests.PurchaseTests.test_buy_lesson_inactive_user">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_buy_lesson_inactive_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test lesson purchase attempt by an inactive user.</span>
+
+<span class="sd">        Verifies that an inactive user cannot purchase a lesson and is redirected to home.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;buy_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">Purchase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exists</span><span class="p">())</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ValidationTests">
+<a class="viewcode-back" href="../../learning.html#learning.tests.ValidationTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ValidationTests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tests for lesson validation and certification functionality.</span>
+
+<span class="sd">    This class tests the validation of lessons and the issuance of certifications.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ValidationTests.setUp">
+<a class="viewcode-back" href="../../learning.html#learning.tests.ValidationTests.setUp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up test data for validation tests.</span>
+
+<span class="sd">        Creates a test user, theme, cursus, and lessons for validation-related tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s1">&#39;testuser@example.com&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme</span> <span class="o">=</span> <span class="n">Theme</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Musique&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursus1</span> <span class="o">=</span> <span class="n">Cursus</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Initiation à la guitare&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">50.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursus2</span> <span class="o">=</span> <span class="n">Cursus</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Initiation au piano&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">50.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus1</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Découverte de l’instrument&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu de la leçon&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com/video&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lesson2</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus1</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Les accords et les gammes&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu de la leçon&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com/video&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lesson3</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus2</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Découverte de l’instrument&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu de la leçon&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com/video&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lesson4</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus2</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Les accords et les gammes&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu de la leçon&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com/video&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson4</span><span class="p">]:</span>
+            <span class="n">Purchase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">utilisateur</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                <span class="n">lesson</span><span class="o">=</span><span class="n">lesson</span><span class="p">,</span>
+                <span class="n">amount</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">price</span><span class="p">,</span>
+                <span class="n">created_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                <span class="n">updated_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ValidationTests.test_validate_lesson">
+<a class="viewcode-back" href="../../learning.html#learning.tests.ValidationTests.test_validate_lesson">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_validate_lesson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test validation of a lesson by a user.</span>
+
+<span class="sd">        Verifies that a user can validate a lesson after marking it as completed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;view_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="o">.</span><span class="n">id</span><span class="p">]),</span> <span class="p">{</span><span class="s1">&#39;mark_completed&#39;</span><span class="p">:</span> <span class="s1">&#39;true&#39;</span><span class="p">})</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;validate_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="mi">302</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">Validation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">validation</span> <span class="o">=</span> <span class="n">Validation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">utilisateur</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">lesson</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ValidationTests.test_certification_after_validation">
+<a class="viewcode-back" href="../../learning.html#learning.tests.ValidationTests.test_certification_after_validation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_certification_after_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test certification issuance after validating all lessons in a theme.</span>
+
+<span class="sd">        Verifies that a user earns a certification after validating all lessons in a theme.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson4</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;view_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]),</span> <span class="p">{</span><span class="s1">&#39;mark_completed&#39;</span><span class="p">:</span> <span class="s1">&#39;true&#39;</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;validate_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">Certification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">certification</span> <span class="o">=</span> <span class="n">Certification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">certification</span><span class="o">.</span><span class="n">utilisateur</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">certification</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ValidationTests.test_no_certification_if_theme_not_complete">
+<a class="viewcode-back" href="../../learning.html#learning.tests.ValidationTests.test_no_certification_if_theme_not_complete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_no_certification_if_theme_not_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that no certification is issued if the theme is not fully completed.</span>
+
+<span class="sd">        Verifies that a certification is not issued until all lessons in a theme are validated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lesson1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson2</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;view_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]),</span> <span class="p">{</span><span class="s1">&#39;mark_completed&#39;</span><span class="p">:</span> <span class="s1">&#39;true&#39;</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;validate_lesson&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">Certification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="mi">0</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="DataAccessTests">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataAccessTests</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tests for data access components.</span>
+
+<span class="sd">    This class tests the creation of models in the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DataAccessTests.setUp">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.setUp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up test data for data access tests.</span>
+
+<span class="sd">        Creates a test user, theme, and cursus for data access tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;testuser&#39;</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="s1">&#39;testuser@example.com&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;TestPassword123!&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theme</span> <span class="o">=</span> <span class="n">Theme</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Musique&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursus</span> <span class="o">=</span> <span class="n">Cursus</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Initiation à la guitare&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">50.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataAccessTests.test_create_theme">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.test_create_theme">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creation of a theme.</span>
+
+<span class="sd">        Verifies that a theme can be created with the correct name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theme</span> <span class="o">=</span> <span class="n">Theme</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Cuisine&#39;</span><span class="p">,</span> <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">theme</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Cuisine&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataAccessTests.test_create_cursus">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.test_create_cursus">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_cursus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creation of a cursus.</span>
+
+<span class="sd">        Verifies that a cursus can be created and associated with a theme.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursus</span> <span class="o">=</span> <span class="n">Cursus</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Initiation au piano&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">50.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">cursus</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Initiation au piano&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">cursus</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataAccessTests.test_create_lesson">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.test_create_lesson">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_lesson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creation of a lesson.</span>
+
+<span class="sd">        Verifies that a lesson can be created and associated with a cursus.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Test Lesson&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">lesson</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;Test Lesson&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">lesson</span><span class="o">.</span><span class="n">cursus</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursus</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataAccessTests.test_create_validation">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.test_create_validation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creation of a validation record.</span>
+
+<span class="sd">        Verifies that a validation record can be created for a user and lesson.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">cursus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cursus</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Test Lesson&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s1">&#39;Contenu&#39;</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">,</span>
+            <span class="n">price</span><span class="o">=</span><span class="mf">20.00</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="s1">&#39;system&#39;</span>
+        <span class="p">)</span>
+        <span class="n">validation</span> <span class="o">=</span> <span class="n">Validation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">utilisateur</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">lesson</span><span class="o">=</span><span class="n">lesson</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">utilisateur</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">lesson</span><span class="p">,</span> <span class="n">lesson</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataAccessTests.test_create_certification">
+<a class="viewcode-back" href="../../learning.html#learning.tests.DataAccessTests.test_create_certification">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_certification</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creation of a certification record.</span>
+
+<span class="sd">        Verifies that a certification record can be created for a user and theme.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">certification</span> <span class="o">=</span> <span class="n">Certification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">utilisateur</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">theme</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span>
+            <span class="n">created_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+            <span class="n">updated_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">certification</span><span class="o">.</span><span class="n">utilisateur</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">certification</span><span class="o">.</span><span class="n">theme</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Antoine Papin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

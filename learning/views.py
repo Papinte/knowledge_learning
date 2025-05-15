@@ -17,7 +17,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 import stripe
 from .forms import RegistrationForm
-from .models import Utilisateur, Cursus, Lesson, Purchase, Validation, Certification
+from .models import Utilisateur, Cursus, Lesson, Purchase, Validation, Certification, Theme
 
 
 def register(request):
@@ -228,13 +228,13 @@ def payment_success(request):
     pending_purchase = request.session.get('pending_purchase')
 
     if not session_id or not pending_purchase:
-        messages.error(request, "No payment session or pending purchase found.")
+        messages.error(request, "Aucune session de paiement ou achat en attente trouvé.")
         return redirect('home')
 
     try:
         session = stripe.checkout.Session.retrieve(session_id)
         if session.payment_status != 'paid':
-            messages.error(request, "Payment not finalized.")
+            messages.error(request, "Le paiement n'a pas été finalisé.")
             return redirect('home')
 
         if pending_purchase['type'] == 'lesson':
@@ -247,9 +247,9 @@ def payment_success(request):
                     created_by=request.user.username,
                     updated_by=request.user.username
                 )
-                messages.success(request, f"Payment successful! You now have access to lesson {lesson.title}.")
+                messages.success(request, f"Paiement réussi ! Vous avez maintenant accès à la leçon {lesson.title}.")
             else:
-                messages.info(request, "Lesson already purchased.")
+                messages.info(request, "Leçon déjà achetée.")
         elif pending_purchase['type'] == 'cursus':
             cursus = get_object_or_404(Cursus, id=pending_purchase['id'])
             if not Purchase.objects.filter(utilisateur=request.user, cursus=cursus).exists():
@@ -267,15 +267,15 @@ def payment_success(request):
                     created_by=request.user.username,
                     updated_by=request.user.username
                 )
-                messages.success(request, f"Payment successful! You now have access to cursus {cursus.name}.")
+                messages.success(request, f"Paiement réussi ! Vous avez maintenant accès au cursus {cursus.name}.")
             else:
-                messages.info(request, "Cursus already purchased.")
+                messages.info(request, "Cursus déjà acheté.")
         else:
-            messages.error(request, "Invalid purchase type.")
+            messages.error(request, "Type d'achat invalide.")
             return redirect('home')
 
     except stripe.error.StripeError as e:
-        messages.error(request, f"Payment verification error: {str(e)}")
+        messages.error(request, f"Erreur de vérification du paiement : {str(e)}")
         return redirect('home')
 
     request.session.pop('stripe_session_id', None)
@@ -294,7 +294,7 @@ def payment_cancel(request):
     Returns:
         HttpResponse: Redirect to the home page with a cancellation message.
     """
-    messages.error(request, "Payment cancelled. No purchase recorded.")
+    messages.error(request, "Paiement annulé. Aucun achat enregistré.")
     return redirect('home')
 
 
@@ -447,35 +447,55 @@ def list_cursuses(request):
     Returns:
         HttpResponse: Rendered cursus list page.
     """
-    cursuses = Cursus.objects.all()
-    cursuses_data = []
-    for cursus in cursuses:
-        lessons = Lesson.objects.filter(cursus=cursus)
-        purchased_lessons = Purchase.objects.filter(
-            utilisateur=request.user if request.user.is_authenticated else None,
-            lesson__in=lessons
-        ).values_list('lesson', flat=True)
-        has_purchased_cursus = Purchase.objects.filter(
-            utilisateur=request.user if request.user.is_authenticated else None,
-            cursus=cursus
-        ).exists()
-        if has_purchased_cursus:
-            adjusted_price = 0
-        else:
-            remaining_lessons = lessons.exclude(id__in=purchased_lessons)
-            if remaining_lessons.exists():
-                adjusted_price = sum(lesson.price for lesson in remaining_lessons)
-            else:
-                adjusted_price = 0
-                has_purchased_cursus = True
-            if not purchased_lessons:
-                adjusted_price = cursus.price
+    themes = Theme.objects.all()
+    themes_data = []
 
-        cursuses_data.append({
-            'cursus': cursus,
-            'adjusted_price': adjusted_price,
-            'has_purchased_cursus': has_purchased_cursus,
-            'purchased_lessons': purchased_lessons,
+    for theme in themes:
+        cursuses = Cursus.objects.filter(theme=theme)
+        cursuses_data = []
+
+        for cursus in cursuses:
+            lessons = Lesson.objects.filter(cursus=cursus)
+            purchased_lessons = Purchase.objects.filter(
+                utilisateur=request.user if request.user.is_authenticated else None,
+                lesson__in=lessons
+            ).values_list('lesson', flat=True)
+            has_purchased_cursus = Purchase.objects.filter(
+                utilisateur=request.user if request.user.is_authenticated else None,
+                cursus=cursus
+            ).exists()
+            if has_purchased_cursus:
+                adjusted_price = 0
+            else:
+                remaining_lessons = lessons.exclude(id__in=purchased_lessons)
+                if remaining_lessons.exists():
+                    adjusted_price = sum(lesson.price for lesson in remaining_lessons)
+                else:
+                    adjusted_price = 0
+                    has_purchased_cursus = True
+                if not purchased_lessons:
+                    adjusted_price = cursus.price
+
+            lessons_data = []
+            for idx, lesson in enumerate(lessons, start=1):
+                lessons_data.append({
+                    'id': lesson.id,
+                    'title': lesson.title,
+                    'price': lesson.price,
+                    'is_purchased': lesson.id in purchased_lessons,
+                    'index': idx
+                })
+
+            cursuses_data.append({
+                'cursus': cursus,
+                'adjusted_price': adjusted_price,
+                'has_purchased_cursus': has_purchased_cursus,
+                'lessons': lessons_data,
+            })
+
+        themes_data.append({
+            'theme': theme,
+            'cursuses': cursuses_data,
         })
 
-    return render(request, 'list_cursuses.html', {'cursuses_data': cursuses_data})
+    return render(request, 'list_cursuses.html', {'themes_data': themes_data})

@@ -4,27 +4,27 @@
 
 {% block content %}
     <h2>Liste des cursus disponibles</h2>
-    {% if cursuses_data %}
-        <ul class="list-group">
-            {% for data in cursuses_data %}
-                {% with cursus=data.cursus %}
+    {% if themes_data %}
+        {% for theme_data in themes_data %}
+            <h3>{{ theme_data.theme.name }} :</h3>
+            <ul class="list-group">
+                {% for cursus_data in theme_data.cursuses %}
                     <li class="list-group-item">
-                        <h4>{{ cursus.name }} (Thème : {{ cursus.theme.name }}) -
-                            {% if data.has_purchased_cursus %}
-                                Déjà payé
-                            {% else %}
-                                {{ data.adjusted_price }} €
+                        <h4>
+                            o Cursus d’{{ cursus_data.cursus.name }} {{ cursus_data.adjusted_price }} €
+                            {% if cursus_data.has_purchased_cursus %}
+                                <span class="badge badge-success">Déjà payé</span>
                             {% endif %}
                         </h4>
-                        {% if not data.has_purchased_cursus %}
-                            <a href="{% url 'buy_cursus' cursus.id %}" class="btn btn-primary btn-sm">Acheter le cursus</a>
+                        {% if not cursus_data.has_purchased_cursus %}
+                            <a href="{% url 'buy_cursus' cursus_data.cursus.id %}" class="btn btn-primary btn-sm">Acheter le cursus</a>
                         {% endif %}
                         <h5>Leçons :</h5>
-                        <ul>
-                            {% for lesson in cursus.lesson_set.all %}
+                        <ul class="lesson-buttons">
+                            {% for lesson in cursus_data.lessons %}
                                 <li>
-                                    {{ lesson.title }} - {{ lesson.price }} €
-                                    {% if lesson.id in data.purchased_lessons or data.has_purchased_cursus %}
+                                    ▪ Leçon n°{{ lesson.index }} : {{ lesson.title }} {{ lesson.price }} €
+                                    {% if lesson.is_purchased %}
                                         <span class="badge badge-success">Déjà payé</span>
                                         <a href="{% url 'view_lesson' lesson.id %}" class="btn btn-info btn-sm">Voir la leçon</a>
                                     {% else %}
@@ -35,9 +35,11 @@
                             {% endfor %}
                         </ul>
                     </li>
-                {% endwith %}
-            {% endfor %}
-        </ul>
+                {% endfor %}
+            </ul>
+        {% empty %}
+            <p>Aucun cursus disponible pour le moment.</p>
+        {% endfor %}
     {% else %}
         <p>Aucun cursus disponible pour le moment.</p>
     {% endif %}
